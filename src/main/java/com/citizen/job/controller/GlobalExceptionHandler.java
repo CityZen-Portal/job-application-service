@@ -3,6 +3,7 @@ package com.citizen.job.controller;
 import com.citizen.job.model.ErrorDetails;
 import com.citizen.job.response.ApiResponse;
 import com.citizen.job.utils.JobNotFoundException;
+import com.citizen.job.utils.UserUnauthorizedException;
 import com.citizen.job.utils.VolunteerNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,4 +56,15 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(apiResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(UserUnauthorizedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleUserUnauthorizedException(Exception ex, WebRequest request) {
+
+        ErrorDetails errorDetails = new ErrorDetails(Instant.now().toEpochMilli(), request.getDescription(false), ex.getMessage());
+
+        logger.error("An unexpected error occurred: {}", ex.getMessage(), ex);
+
+        ApiResponse<Object> apiResponse = ApiResponse.error(errorDetails, ex.getMessage());
+
+        return new ResponseEntity<>(apiResponse, HttpStatus.UNAUTHORIZED);
+    }
 }

@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RoleDto {
     @Enumerated(EnumType.STRING)
-    private ERoleDto name;
+    private Role name;
 }

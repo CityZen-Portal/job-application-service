@@ -24,6 +24,8 @@ public interface VolunteerService {
 
     Volunteer deleteVolunteerById(Long id);
 
+    Volunteer deleteVolunteerPermanentlyById(Long id);
+
     Volunteer purgeExpiredVolunteers();
 
 }

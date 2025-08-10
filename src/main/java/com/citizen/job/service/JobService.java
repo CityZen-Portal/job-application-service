@@ -1,5 +1,6 @@
 package com.citizen.job.service;
 
+import com.citizen.job.dto.OpportunitiesCountDto;
 import com.citizen.job.entity.Job;
 
 import java.util.List;
@@ -14,6 +15,8 @@ public interface JobService {
 
     List<Job> findAllActiveJobs();
 
+    OpportunitiesCountDto getOpportunitiesCount();
+
     List<Job> findAllInactiveJobs();
 
     Job updateJobById(Long id, Job job);
@@ -23,6 +26,8 @@ public interface JobService {
     Job deactivateJobById(Long id);
 
     Job deleteJobById(Long id);
+
+    Job deleteJobPremanentlyById(Long id);
 
     Job purgeExpiredJobs();
 }

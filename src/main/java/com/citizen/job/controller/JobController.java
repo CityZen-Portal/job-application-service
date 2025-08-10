@@ -2,6 +2,7 @@ package com.citizen.job.controller;
 
 import com.citizen.job.client.UserInterface;
 import com.citizen.job.dto.EmailResponseDto;
+import com.citizen.job.dto.OpportunitiesCountDto;
 import com.citizen.job.dto.TokenResponseDto;
 import com.citizen.job.entity.Job;
 import com.citizen.job.response.ApiResponse;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/work")
@@ -145,6 +147,30 @@ public class JobController {
         return new  ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @DeleteMapping("/jobs/delete/{id}")
+    public ResponseEntity<ApiResponse<Job>> deleteJobPremanently(
+            @RequestHeader("id") Long adminId,
+            @RequestHeader("email") String email,
+            @RequestHeader("token") String token,
+            @PathVariable Long id){
+
+        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
+        assert tokenResponseDto != null;
+        if(!tokenResponseDto.isValid()){
+            throw new UserUnauthorizedException("User is not authorized");
+        }
+
+        EmailResponseDto emailResponseDto = Objects.requireNonNull(userInterface.getProfileByEmail(email).getBody()).getData();
+
+        if (!emailResponseDto.getEmail().equals(email)) {
+            throw new UserUnauthorizedException("User is not authorized");
+        }
+
+        Job _job = jobService.deleteJobPremanentlyById(id);
+        ApiResponse<Job> response = ApiResponse.success(_job, "Job deleted permanently successfully with ID: " + id);
+        return new  ResponseEntity<>(response, HttpStatus.OK);
+    }
+
     @GetMapping("/jobs/active")
     public ResponseEntity<ApiResponse<List<Job>>> getActiveJobs(
             @RequestHeader("id") Long citizenId,
@@ -165,6 +191,13 @@ public class JobController {
 
         List<Job> _jobs = jobService.findAllActiveJobs();
         ApiResponse<List<Job>> response = ApiResponse.success(_jobs, "List of Active Jobs");
+        return new  ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/jobs/active/count")
+    public ResponseEntity<ApiResponse<OpportunitiesCountDto>> getActiveJobsCount(){
+        OpportunitiesCountDto opportunitiesCount = jobService.getOpportunitiesCount();
+        ApiResponse<OpportunitiesCountDto> response = ApiResponse.success(opportunitiesCount, "Opportunities count");
         return new  ResponseEntity<>(response, HttpStatus.OK);
     }
 

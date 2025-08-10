@@ -104,6 +104,17 @@ public class VolunteerServiceImpl implements VolunteerService {
     }
 
     @Override
+    public Volunteer deleteVolunteerPermanentlyById(Long id) {
+        Optional<Volunteer> volunteerContainer = volunteerRepository.findById(id);
+        if(volunteerContainer.isPresent()) {
+            Volunteer _volunteer = volunteerContainer.get();
+            volunteerRepository.delete(_volunteer);
+            return _volunteer;
+        }
+        else throw new VolunteerNotFoundException("Volunteer Post not found");
+    }
+
+    @Override
     public Volunteer purgeExpiredVolunteers() {
         return null;
     }

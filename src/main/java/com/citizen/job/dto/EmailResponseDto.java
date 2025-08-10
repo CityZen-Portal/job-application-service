@@ -12,7 +12,7 @@ import java.util.Set;
 public class EmailResponseDto {
     private Long id;
     private String email;
-    private String username;
-    private Set<RoleDto> role;
-    private String aadharNumber;
+    private String userName;
+    private Set<RoleDto> roles;
+    private String aadhaar;
 }

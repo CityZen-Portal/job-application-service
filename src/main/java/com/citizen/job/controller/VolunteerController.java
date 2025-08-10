@@ -145,6 +145,30 @@ public class VolunteerController {
         return new  ResponseEntity<>(response, HttpStatus.OK);
     }
 
+    @DeleteMapping("/service/delete/{id}")
+    public ResponseEntity<ApiResponse<Volunteer>> deleteVolunteerPermanently(
+            @RequestHeader("id") Long adminId,
+            @RequestHeader("email") String email,
+            @RequestHeader("token") String token,
+            @PathVariable Long id) {
+
+        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
+        assert tokenResponseDto != null;
+        if(!tokenResponseDto.isValid()){
+            throw new UserUnauthorizedException("User is not authorized");
+        }
+
+        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
+
+        if (!emailResponseDto.getEmail().equals(email)) {
+            throw new UserUnauthorizedException("User is not authorized");
+        }
+
+        Volunteer _job = volunteerService.deleteVolunteerPermanentlyById(id);
+        ApiResponse<Volunteer> response = ApiResponse.success(_job, "Volunteer deleted successfully with ID: " + id);
+        return new  ResponseEntity<>(response, HttpStatus.OK);
+    }
+
     @GetMapping("/service/active")
     public ResponseEntity<ApiResponse<List<Volunteer>>> getActiveVolunteers(
             @RequestHeader("id") Long citizenId,

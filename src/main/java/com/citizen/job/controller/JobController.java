@@ -1,9 +1,7 @@
 package com.citizen.job.controller;
 
 import com.citizen.job.client.UserInterface;
-import com.citizen.job.dto.EmailResponseDto;
-import com.citizen.job.dto.OpportunitiesCountDto;
-import com.citizen.job.dto.TokenResponseDto;
+import com.citizen.job.dto.*;
 import com.citizen.job.entity.Job;
 import com.citizen.job.response.ApiResponse;
 import com.citizen.job.service.JobService;
@@ -14,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/work")
@@ -34,17 +33,7 @@ public class JobController {
             @RequestHeader("token") String token,
             @RequestBody Job job) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(adminId, email, token);
 
         Job saveJob = jobService.saveJob(job);
         ApiResponse<Job> response = ApiResponse.success(saveJob, "Job added");
@@ -57,19 +46,9 @@ public class JobController {
             @RequestHeader("email") String email,
             @RequestHeader("token") String token){
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        EmailResponseDto _emailResponseDto = validateUser(email, citizenId, token);
 
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        List<Job> _jobs = jobService.findAllJobs();
+        List<Job> _jobs = hasRole(_emailResponseDto, Role.ADMIN) ? jobService.findAllJobs() : jobService.findAllActiveJobs();
         ApiResponse<List<Job>> response = ApiResponse.success(_jobs, "List of All Jobs");
         return new  ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -81,21 +60,11 @@ public class JobController {
             @RequestHeader("token") String token,
             @PathVariable Long id) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        EmailResponseDto _emailResponseDto = validateUser(email, citizenId, token);
 
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        Job updatedJob = jobService.findJobById(id);
-        ApiResponse<Job> response = ApiResponse.success(updatedJob, "Job by id:"+id);
-        return new  ResponseEntity<>(response, HttpStatus.CREATED);
+        Job _job = hasRole(_emailResponseDto, Role.ADMIN) ? jobService.findJobById(id) : jobService.findActiveJobById(id);
+        ApiResponse<Job> response = ApiResponse.success(_job, "Job by id:"+id);
+        return new  ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PutMapping("/jobs/{id}")
@@ -106,17 +75,7 @@ public class JobController {
             @PathVariable Long id,
             @RequestBody Job newJob) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(adminId, email, token);
 
         Job updatedJob = jobService.updateJobById(id, newJob);
         ApiResponse<Job> response = ApiResponse.success(updatedJob, "Job updated by id:"+id);
@@ -130,17 +89,7 @@ public class JobController {
             @RequestHeader("token") String token,
             @PathVariable Long id) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(adminId, email, token);
 
         Job _job = jobService.deleteJobById(id);
         ApiResponse<Job> response = ApiResponse.success(_job, "Job deleted successfully with ID: " + id);
@@ -148,23 +97,13 @@ public class JobController {
     }
 
     @DeleteMapping("/jobs/delete/{id}")
-    public ResponseEntity<ApiResponse<Job>> deleteJobPremanently(
+    public ResponseEntity<ApiResponse<Job>> deleteJobPermanently(
             @RequestHeader("id") Long adminId,
             @RequestHeader("email") String email,
             @RequestHeader("token") String token,
             @PathVariable Long id){
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = Objects.requireNonNull(userInterface.getProfileByEmail(email).getBody()).getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(adminId, email, token);
 
         Job _job = jobService.deleteJobPremanentlyById(id);
         ApiResponse<Job> response = ApiResponse.success(_job, "Job deleted permanently successfully with ID: " + id);
@@ -177,17 +116,7 @@ public class JobController {
             @RequestHeader("email") String email,
             @RequestHeader("token") String token) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateUser(email, citizenId, token);
 
         List<Job> _jobs = jobService.findAllActiveJobs();
         ApiResponse<List<Job>> response = ApiResponse.success(_jobs, "List of Active Jobs");
@@ -207,17 +136,7 @@ public class JobController {
             @RequestHeader("email") String email,
             @RequestHeader("token") String token) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(citizenId, email, token);
 
         List<Job> _jobs = jobService.findAllInactiveJobs();
         ApiResponse<List<Job>> response = ApiResponse.success(_jobs, "List of Inactive Jobs");
@@ -231,17 +150,7 @@ public class JobController {
             @RequestHeader("token") String token,
             @PathVariable Long id) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(adminId, email, token);
 
         Job _job = jobService.activateJobById(id);
         ApiResponse<Job> response = ApiResponse.success(_job, "Job activated by id:"+id);
@@ -255,17 +164,7 @@ public class JobController {
             @RequestHeader("token") String token,
             @PathVariable Long id) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(adminId, email, token);
 
         Job _job = jobService.deactivateJobById(id);
         ApiResponse<Job> response = ApiResponse.success(_job, "Job deactivated by id:"+id);
@@ -279,21 +178,51 @@ public class JobController {
             @RequestHeader("token") String token
             ) {
 
+        validateAdmin(adminId, email, token);
+
+        Job _job = jobService.purgeExpiredJobs();
+        ApiResponse<Job> response = ApiResponse.success(_job, "Job deleted successfully");
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    private void validateAdmin(@RequestHeader("id") Long adminId, @RequestHeader("email") String email, @RequestHeader("token") String token) {
         TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
         assert tokenResponseDto != null;
         if(!tokenResponseDto.isValid()){
             throw new UserUnauthorizedException("User is not authorized");
         }
 
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
+        EmailResponseDto _emailResponseDto = Objects.requireNonNull(userInterface.getProfileByEmail(email).getBody()).getData();
 
-        if (!emailResponseDto.getEmail().equals(email)) {
+        if (!adminId.equals(_emailResponseDto.getId()) || !_emailResponseDto.getEmail().equals(email) || !hasRole(_emailResponseDto, Role.ADMIN)) {
+            throw new UserUnauthorizedException("User is not authorized");
+        }
+    }
+
+    private EmailResponseDto  validateUser(@RequestHeader("email") String email, @RequestHeader("id") Long citizenId, @RequestHeader("token") String token) {
+        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
+        assert tokenResponseDto != null;
+        if(!tokenResponseDto.isValid()){
             throw new UserUnauthorizedException("User is not authorized");
         }
 
-        Job _job = jobService.purgeExpiredJobs();
-        ApiResponse<Job> response = ApiResponse.success(_job, "Job deleted successfully");
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        EmailResponseDto _emailResponseDto = Objects.requireNonNull(userInterface.getProfileByEmail(email).getBody()).getData();
+
+        if (!citizenId.equals(_emailResponseDto.getId()) || !_emailResponseDto.getEmail().equals(email) || !(hasRole(_emailResponseDto, Role.CITIZEN) || hasRole(_emailResponseDto, Role.ADMIN))) {
+            throw new UserUnauthorizedException("User is not authorized");
+        }
+
+        return _emailResponseDto;
     }
+
+    private boolean hasRole(EmailResponseDto dto, Role targetRole) {
+        if (dto == null || dto.getRole() == null || dto.getRole().isEmpty()) {
+            return true;
+        }
+        return dto.getRole().stream()
+                .anyMatch(role -> role != null && role.getName() == targetRole);
+    }
+
+
 }
 

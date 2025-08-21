@@ -1,10 +1,7 @@
-package com.citizen.job.controller;
+package com.citizen.job.utils;
 
 import com.citizen.job.model.ErrorDetails;
 import com.citizen.job.response.ApiResponse;
-import com.citizen.job.utils.JobNotFoundException;
-import com.citizen.job.utils.UserUnauthorizedException;
-import com.citizen.job.utils.VolunteerNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

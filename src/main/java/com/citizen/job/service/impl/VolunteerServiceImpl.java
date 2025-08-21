@@ -40,17 +40,17 @@ public class VolunteerServiceImpl implements VolunteerService {
 
     @Override
     public List<Volunteer> findAllActiveVolunteers() {
-        return volunteerRepository.findAllByIsActive(true);
+        return volunteerRepository.findAllByIsActiveAndIsDeleted(true, false);
     }
 
     @Override
     public List<Volunteer> findAllInactiveVolunteers() {
-        return volunteerRepository.findAllByIsActive(false);
+        return volunteerRepository.findAllByIsActiveAndIsDeleted(false, false);
     }
 
     @Override
     public Volunteer updateVolunteerById(Long id, Volunteer volunteer) {
-        Optional<Volunteer> volunteerContainer = volunteerRepository.findById(id);
+        Optional<Volunteer> volunteerContainer = Optional.ofNullable(volunteerRepository.findByIdAndIsDeleted(id, false));
         if(volunteerContainer.isPresent()) {
             Volunteer _volunteer = volunteerContainer.get();
             _volunteer.setProgramTitle(volunteer.getProgramTitle());
@@ -72,7 +72,7 @@ public class VolunteerServiceImpl implements VolunteerService {
 
     @Override
     public Volunteer activateVolunteerById(Long id) {
-        Optional<Volunteer> volunteerContainer = volunteerRepository.findById(id);
+        Optional<Volunteer> volunteerContainer = Optional.ofNullable(volunteerRepository.findByIdAndIsDeleted(id, false));
         if(volunteerContainer.isPresent()) {
             Volunteer _volunteer = volunteerContainer.get();
             _volunteer.setIsActive(true);
@@ -83,7 +83,7 @@ public class VolunteerServiceImpl implements VolunteerService {
 
     @Override
     public Volunteer deactivateVolunteerById(Long id) {
-        Optional<Volunteer> volunteerContainer = volunteerRepository.findById(id);
+        Optional<Volunteer> volunteerContainer = Optional.ofNullable(volunteerRepository.findByIdAndIsDeleted(id, false));
         if(volunteerContainer.isPresent()) {
             Volunteer _volunteer = volunteerContainer.get();
             _volunteer.setIsActive(false);
@@ -94,9 +94,10 @@ public class VolunteerServiceImpl implements VolunteerService {
 
     @Override
     public Volunteer deleteVolunteerById(Long id) {
-        Optional<Volunteer> volunteerContainer = volunteerRepository.findById(id);
+        Optional<Volunteer> volunteerContainer = Optional.ofNullable(volunteerRepository.findByIdAndIsDeleted(id, false));
         if(volunteerContainer.isPresent()) {
             Volunteer _volunteer = volunteerContainer.get();
+            _volunteer.setIsActive(false);
             _volunteer.setIsDeleted(true);
             return volunteerRepository.save(_volunteer);
         }
@@ -105,7 +106,7 @@ public class VolunteerServiceImpl implements VolunteerService {
 
     @Override
     public Volunteer deleteVolunteerPermanentlyById(Long id) {
-        Optional<Volunteer> volunteerContainer = volunteerRepository.findById(id);
+        Optional<Volunteer> volunteerContainer = Optional.ofNullable(volunteerRepository.findByIdAndIsDeleted(id, true));
         if(volunteerContainer.isPresent()) {
             Volunteer _volunteer = volunteerContainer.get();
             volunteerRepository.delete(_volunteer);
@@ -117,5 +118,14 @@ public class VolunteerServiceImpl implements VolunteerService {
     @Override
     public Volunteer purgeExpiredVolunteers() {
         return null;
+    }
+
+    @Override
+    public Volunteer findActiveVolunteerById(Long id) {
+        Optional<Volunteer> volunteerContainer = Optional.ofNullable(volunteerRepository.findByIdAndIsActiveAndIsDeleted(id, true, false));
+        if(volunteerContainer.isPresent()) {
+            return volunteerContainer.get();
+        }
+        else throw new VolunteerNotFoundException("Job not found");
     }
 }

@@ -28,4 +28,5 @@ public interface VolunteerService {
 
     Volunteer purgeExpiredVolunteers();
 
+    Volunteer findActiveVolunteerById(Long id);
 }

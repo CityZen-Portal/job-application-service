@@ -15,13 +15,14 @@ import java.time.LocalTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"program_title", "program_description", "coordinator_name", "program_date", "program_time"}))
 public class Volunteer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
-    @Column(nullable = false)
+    @Column(name = "program_title", nullable = false)
     private String programTitle;
 
     @NotNull
@@ -29,15 +30,15 @@ public class Volunteer {
     private String location;
 
     @NotNull
-    @Column(nullable = false)
+    @Column(name = "program_description", nullable = false)
     private String programDescription;
 
     @NotNull
-    @Column(nullable = false)
+    @Column(name = "program_date", nullable = false)
     private LocalDate programDate;
 
     @NotNull
-    @Column(nullable = false)
+    @Column(name = "program_time", nullable = false)
     private LocalTime programTime;
 
     @NotNull
@@ -45,7 +46,7 @@ public class Volunteer {
     private String duration;
 
     @NotNull
-    @Column(nullable = false)
+    @Column(name = "coordinator_name", nullable = false)
     private String coordinatorName;
 
     private String coordinatorEmail;

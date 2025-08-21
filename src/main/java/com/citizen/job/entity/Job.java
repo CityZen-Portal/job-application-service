@@ -13,7 +13,9 @@ import java.util.List;
 
 @Entity
 @Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"title", "description", "contactPersonName", "deadline"}))
 public class Job {
 
     @Id

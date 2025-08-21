@@ -30,4 +30,6 @@ public interface JobService {
     Job deleteJobPremanentlyById(Long id);
 
     Job purgeExpiredJobs();
+
+    Job findActiveJobById(Long id);
 }

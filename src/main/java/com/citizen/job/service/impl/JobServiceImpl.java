@@ -10,7 +10,6 @@ import com.citizen.job.utils.JobNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,7 +45,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public List<Job> findAllActiveJobs() {
-        return jobRepository.findAllByIsActive(true);
+        return jobRepository.findAllByIsActiveAndIsDeleted(true, false);
     }
 
     @Override
@@ -62,12 +61,12 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public List<Job> findAllInactiveJobs() {
-        return jobRepository.findAllByIsActive(false);
+        return jobRepository.findAllByIsActiveAndIsDeleted(false, false);
     }
 
     @Override
     public Job updateJobById(Long id, Job job) {
-        Optional<Job> jobContainer = jobRepository.findById(id);
+        Optional<Job> jobContainer = Optional.ofNullable(jobRepository.findByIdAndIsDeleted(id, false));
         if(jobContainer.isPresent()) {
             Job _job = jobContainer.get();
             _job.setTitle(job.getTitle());
@@ -90,7 +89,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public Job activateJobById(Long id) {
-        Optional<Job> jobContainer = jobRepository.findById(id);
+        Optional<Job> jobContainer = Optional.ofNullable(jobRepository.findByIdAndIsDeleted(id, false));
         if(jobContainer.isPresent()) {
             Job _job = jobContainer.get();
             _job.setIsActive(true);
@@ -102,7 +101,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public Job deactivateJobById(Long id) {
-        Optional<Job> jobContainer = jobRepository.findById(id);
+        Optional<Job> jobContainer = Optional.ofNullable(jobRepository.findByIdAndIsDeleted(id, false));
         if(jobContainer.isPresent()) {
             Job _job = jobContainer.get();
             _job.setIsActive(false);
@@ -114,7 +113,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public Job deleteJobById(Long id) {
-        Optional<Job> jobContainer = jobRepository.findById(id);
+        Optional<Job> jobContainer = Optional.ofNullable(jobRepository.findByIdAndIsDeleted(id, false));
         if(jobContainer.isPresent()) {
             Job _job = jobContainer.get();
             _job.setIsDeleted(true);
@@ -125,7 +124,7 @@ public class JobServiceImpl implements JobService {
 
     @Override
     public Job deleteJobPremanentlyById(Long id) {
-        Optional<Job> jobContainer = jobRepository.findById(id);
+        Optional<Job> jobContainer = Optional.ofNullable(jobRepository.findByIdAndIsDeleted(id, true));
         if(jobContainer.isPresent()) {
             Job _job = jobContainer.get();
             jobRepository.delete(_job);
@@ -137,5 +136,14 @@ public class JobServiceImpl implements JobService {
     @Override
     public Job purgeExpiredJobs() {
         return null;
+    }
+
+    @Override
+    public Job findActiveJobById(Long id) {
+        Optional<Job> jobContainer = Optional.ofNullable(jobRepository.findByIdAndIsActiveAndIsDeleted(id, true, false));
+        if(jobContainer.isPresent()) {
+            return jobContainer.get();
+        }
+        else throw new JobNotFoundException("Job not found");
     }
 }

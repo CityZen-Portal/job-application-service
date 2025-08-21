@@ -2,6 +2,8 @@ package com.citizen.job.controller;
 
 import com.citizen.job.client.UserInterface;
 import com.citizen.job.dto.EmailResponseDto;
+import com.citizen.job.dto.Role;
+import com.citizen.job.dto.RoleDto;
 import com.citizen.job.dto.TokenResponseDto;
 import com.citizen.job.entity.Volunteer;
 import com.citizen.job.response.ApiResponse;
@@ -11,7 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
+
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/work")
@@ -32,17 +35,7 @@ public class VolunteerController {
             @RequestHeader("token") String token,
             @RequestBody Volunteer job) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(adminId, email, token);
 
         Volunteer saveVolunteer = volunteerService.saveVolunteer(job);
         ApiResponse<Volunteer> response = ApiResponse.success(saveVolunteer, "Volunteer added");
@@ -55,19 +48,9 @@ public class VolunteerController {
             @RequestHeader("email") String email,
             @RequestHeader("token") String token){
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        EmailResponseDto _emailResponseDto = validateUser(email, citizenId, token);
 
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        List<Volunteer> _jobs = volunteerService.findAllVolunteers();
+        List<Volunteer> _jobs = hasRole(_emailResponseDto, Role.ADMIN) ? volunteerService.findAllVolunteers() : volunteerService.findAllActiveVolunteers();
         ApiResponse<List<Volunteer>> response = ApiResponse.success(_jobs, "List of All Volunteers");
         return new  ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -79,19 +62,9 @@ public class VolunteerController {
             @RequestHeader("token") String token,
             @PathVariable Long id) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        EmailResponseDto _emailResponseDto = validateUser(email, citizenId, token);
 
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        Volunteer updatedVolunteer = volunteerService.findVolunteerById(id);
+        Volunteer updatedVolunteer = hasRole(_emailResponseDto, Role.ADMIN) ? volunteerService.findVolunteerById(id) : volunteerService.findActiveVolunteerById(id);
         ApiResponse<Volunteer> response = ApiResponse.success(updatedVolunteer, "Volunteer by id:"+id);
         return new  ResponseEntity<>(response, HttpStatus.CREATED);
     }
@@ -104,17 +77,7 @@ public class VolunteerController {
             @PathVariable Long id,
             @RequestBody Volunteer newVolunteer) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(adminId, email, token);
 
         Volunteer updatedVolunteer = volunteerService.updateVolunteerById(id, newVolunteer);
         ApiResponse<Volunteer> response = ApiResponse.success(updatedVolunteer, "Volunteer updated by id:"+id);
@@ -128,17 +91,7 @@ public class VolunteerController {
             @RequestHeader("token") String token,
             @PathVariable Long id) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(adminId, email, token);
 
         Volunteer _job = volunteerService.deleteVolunteerById(id);
         ApiResponse<Volunteer> response = ApiResponse.success(_job, "Volunteer deleted successfully with ID: " + id);
@@ -152,20 +105,10 @@ public class VolunteerController {
             @RequestHeader("token") String token,
             @PathVariable Long id) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(adminId, email, token);
 
         Volunteer _job = volunteerService.deleteVolunteerPermanentlyById(id);
-        ApiResponse<Volunteer> response = ApiResponse.success(_job, "Volunteer deleted successfully with ID: " + id);
+        ApiResponse<Volunteer> response = ApiResponse.success(_job, "Volunteer deleted permanently successfully with ID: " + id);
         return new  ResponseEntity<>(response, HttpStatus.OK);
     }
 
@@ -175,17 +118,7 @@ public class VolunteerController {
             @RequestHeader("email") String email,
             @RequestHeader("token") String token) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateUser(email, citizenId, token);
 
         List<Volunteer> _jobs = volunteerService.findAllActiveVolunteers();
         ApiResponse<List<Volunteer>> response = ApiResponse.success(_jobs, "List of Active Volunteers");
@@ -194,21 +127,11 @@ public class VolunteerController {
 
     @GetMapping("/service/inactive")
     public ResponseEntity<ApiResponse<List<Volunteer>>> getInactiveVolunteers(
-            @RequestHeader("id") Long citizenId,
+            @RequestHeader("id") Long adminId,
             @RequestHeader("email") String email,
             @RequestHeader("token") String token) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(adminId, email, token);
 
         List<Volunteer> _jobs = volunteerService.findAllInactiveVolunteers();
         ApiResponse<List<Volunteer>> response = ApiResponse.success(_jobs, "List of Inactive Volunteers");
@@ -222,17 +145,7 @@ public class VolunteerController {
             @RequestHeader("token") String token,
             @PathVariable Long id) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(adminId, email, token);
 
         Volunteer _job = volunteerService.activateVolunteerById(id);
         ApiResponse<Volunteer> response = ApiResponse.success(_job, "Volunteer activated by id:"+id);
@@ -246,17 +159,7 @@ public class VolunteerController {
             @RequestHeader("token") String token,
             @PathVariable Long id) {
 
-        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
-        assert tokenResponseDto != null;
-        if(!tokenResponseDto.isValid()){
-            throw new UserUnauthorizedException("User is not authorized");
-        }
-
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
-
-        if (!emailResponseDto.getEmail().equals(email)) {
-            throw new UserUnauthorizedException("User is not authorized");
-        }
+        validateAdmin(adminId, email, token);
 
         Volunteer _job = volunteerService.deactivateVolunteerById(id);
         ApiResponse<Volunteer> response = ApiResponse.success(_job, "Volunteer deactivated by id:"+id);
@@ -269,21 +172,51 @@ public class VolunteerController {
             @RequestHeader("email") String email,
             @RequestHeader("token") String token) {
 
+        validateAdmin(adminId, email, token);
+
+        Volunteer _job = volunteerService.purgeExpiredVolunteers();
+        ApiResponse<Volunteer> response = ApiResponse.success(_job, "Volunteer deleted successfully");
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
+    private void validateAdmin(@RequestHeader("id") Long adminId, @RequestHeader("email") String email, @RequestHeader("token") String token) {
         TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
         assert tokenResponseDto != null;
         if(!tokenResponseDto.isValid()){
             throw new UserUnauthorizedException("User is not authorized");
         }
 
-        EmailResponseDto emailResponseDto = userInterface.getProfileByEmail(email).getBody().getData();
+        EmailResponseDto _emailResponseDto = Objects.requireNonNull(userInterface.getProfileByEmail(email).getBody()).getData();
 
-        if (!emailResponseDto.getEmail().equals(email)) {
+        if (!adminId.equals(_emailResponseDto.getId()) || !_emailResponseDto.getEmail().equals(email) || !hasRole(_emailResponseDto, Role.ADMIN)) {
+            throw new UserUnauthorizedException("User is not authorized");
+        }
+    }
+
+    private EmailResponseDto  validateUser(@RequestHeader("email") String email, @RequestHeader("id") Long citizenId, @RequestHeader("token") String token) {
+        TokenResponseDto tokenResponseDto = userInterface.validateUser(token).getBody();
+        assert tokenResponseDto != null;
+        if(!tokenResponseDto.isValid()){
             throw new UserUnauthorizedException("User is not authorized");
         }
 
-        Volunteer _job = volunteerService.purgeExpiredVolunteers();
-        ApiResponse<Volunteer> response = ApiResponse.success(_job, "Volunteer deleted successfully");
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        EmailResponseDto _emailResponseDto = Objects.requireNonNull(userInterface.getProfileByEmail(email).getBody()).getData();
+
+        if (!citizenId.equals(_emailResponseDto.getId()) || !_emailResponseDto.getEmail().equals(email) || !(hasRole(_emailResponseDto, Role.CITIZEN) || hasRole(_emailResponseDto, Role.ADMIN))) {
+            throw new UserUnauthorizedException("User is not authorized");
+        }
+
+        return _emailResponseDto;
     }
+
+    private boolean hasRole(EmailResponseDto dto, Role targetRole) {
+        if (dto == null || dto.getRole() == null || dto.getRole().isEmpty()) {
+            return true;
+        }
+        return dto.getRole().stream()
+                .anyMatch(role -> role != null && role.getName() == targetRole);
+    }
+
 }
 
